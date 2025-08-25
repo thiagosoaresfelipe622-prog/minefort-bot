@@ -1,16 +1,17 @@
 import fetch from "node-fetch";
 
-// Pegando valores das variáveis de ambiente
-const SERVER_ID = process.env.SERVER_ID;
+// Variáveis de ambiente
 const COOKIE = process.env.COOKIE;
 const USER_AGENT = process.env.USER_AGENT;
+const SERVER_ID = process.env.SERVER_ID;
 
-if (!SERVER_ID || !COOKIE || !USER_AGENT) {
-  console.error("⚠️ Por favor, configure as variáveis de ambiente: SERVER_ID, COOKIE, USER_AGENT");
-  process.exit(1);
+// Função para esperar X milissegundos
+function wait(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function getStatus() {
+// Pega status do servidor
+async function getStatus(retryCount = 0) {
   try {
     const res = await fetch("https://api.minefort.com/v1/user/servers", {
       headers: {
@@ -19,16 +20,25 @@ async function getStatus() {
         "Accept": "application/json"
       }
     });
-    if (!res.ok) throw new Error(`Erro ao pegar status: ${res.status}`);
+
+    if (res.status === 429) {
+      const delay = Math.pow(2, retryCount) * 1000; // retry exponencial
+      console.warn(`⚠️ Too Many Requests. Tentando de novo em ${delay/1000}s`);
+      await wait(delay);
+      return getStatus(retryCount + 1);
+    }
+
     const data = await res.json();
     const server = data.find(s => s.id === SERVER_ID);
     return server?.status || "desconhecido";
+
   } catch (e) {
     console.error("Erro getStatus:", e.message);
     return "erro";
   }
 }
 
+// Liga o servidor
 async function startServer() {
   try {
     const res = await fetch(`https://api.minefort.com/v1/server/${SERVER_ID}/start`, {
@@ -36,25 +46,39 @@ async function startServer() {
       headers: {
         "Cookie": COOKIE,
         "User-Agent": USER_AGENT,
-        "Content-Type": "application/json"
+        "Accept": "application/json"
       }
     });
-    console.log("Start request status:", res.status);
+
+    if(res.status === 429){
+      console.warn("⚠️ Too Many Requests ao tentar start. Retentando...");
+      await wait(5000);
+      return startServer();
+    }
+
+    console.log("Servidor iniciado!");
   } catch (e) {
     console.error("Erro startServer:", e.message);
   }
 }
 
+// Loop principal
 async function loop() {
   const status = await getStatus();
   console.log("Status atual:", status);
-  if (["hibernating", "offline"].includes(status)) {
-    console.log("Servidor parado → tentando iniciar...");
+
+  if(status === "hibernating"){
+    console.log("Servidor hibernando, ligando...");
     await startServer();
+  } else if(status === "running") {
+    console.log("Servidor já está rodando.");
+  } else if(status === "erro") {
+    console.log("Erro ao checar status. Tentando de novo no próximo loop.");
   }
+
+  // Espera 5 minutos antes do próximo loop
+  setTimeout(loop, 300000);
 }
 
-// Roda a cada 5m
-setInterval(loop, 300000);
-loop();
-
+// Delay inicial de 10s antes do primeiro loop
+setTimeout(loop, 10000);
