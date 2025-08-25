@@ -1,7 +1,7 @@
 {
   "name": "minefort-bot",
   "version": "1.0.0",
-  "description": "Bot para iniciar servidor Minefort automaticamente usando Puppeteer",
+  "description": "Bot Minefort para iniciar servidor automaticamente usando Puppeteer",
   "main": "index.js",
   "type": "module",
   "scripts": {
@@ -10,8 +10,6 @@
   "author": "SeuNome",
   "license": "MIT",
   "dependencies": {
-    "node-fetch": "^3.3.2",
-    "puppeteer": "^24.17.0"
-  },
-  "keywords": []
+    "puppeteer": "^21.3.3"
+  }
 }
