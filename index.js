@@ -54,6 +54,7 @@ async function loop() {
   }
 }
 
-// Roda a cada 60s
-setInterval(loop, 60_000);
+// Roda a cada 5m
+setInterval(loop, 300000);
 loop();
+
