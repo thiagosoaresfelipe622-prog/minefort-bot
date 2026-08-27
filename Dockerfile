@@ -1,4 +1,3 @@
-
 FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -16,9 +15,10 @@ RUN sed -i \
     -e 's/#PasswordAuthentication yes/PasswordAuthentication yes/' \
     /etc/ssh/sshd_config
 
+# Baixa e instala o sshx
 RUN curl -fsSL https://sshx.io/get | sh
 
 EXPOSE 22
 
-CMD ["bash", "-c", "ssh-keygen -A && /usr/sbin/sshd && echo '========================================' && echo 'SSHX STARTING...' && echo '========================================' && exec sshx localhost:22"]
-
+# Inicializa as chaves do SSH, roda o SSH daemon em background e inicia o sshx
+CMD ["bash", "-c", "ssh-keygen -A && /usr/sbin/sshd && echo '========================================' && echo 'SSHX STARTING...' && echo '========================================' && exec sshx"]
