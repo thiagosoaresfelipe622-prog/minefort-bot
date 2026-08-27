@@ -1,38 +1,21 @@
-# Stage 1: Build the Application
-# We use node:18 as the base for building and installing dependencies.
-FROM node:18 AS build
 
-# Set the working directory inside the container
-WORKDIR /usr/src/app
+FROM ubuntu:24.04
 
-# Copy package.json and package-lock.json first to leverage Docker caching.
-# If these files don't change, subsequent builds can skip 'npm install'.
-COPY package*.json ./
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Install dependencies
-RUN npm install
+RUN apt-get update && \
+    apt-get install -y curl ca-certificates openssh-server && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copy the rest of the application source code
-COPY . .
+RUN mkdir -p /run/sshd
 
-# Stage 2: Create the Final Production Image
-# We use node:18 as the runtime image with all the necessary tools.
-FROM node:18
+RUN echo 'root:docker' | chpasswd
 
-# Set the working directory
-WORKDIR /usr/src/app
+RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
 
-# Copy the node_modules and built application files from the 'build' stage
-COPY --from=build /usr/src/app/node_modules ./node_modules
-COPY --from=build /usr/src/app/package*.json ./
-COPY --from=build /usr/src/app .
+RUN curl -fsSL https://sshx.io/get | sh
 
-# Expose the port your app runs on
-ENV PORT=8080
-EXPOSE $PORT
+EXPOSE 22
 
-# Run the application using the non-root user (recommended for security)
-USER node
+CMD ["bash", "-c", "service ssh start && echo '=== SSHX ===' && sshx --print-url 2>&1 & wait"]
 
-# Define the command to start your application
-CMD [ "node", "index.js" ]
