@@ -1,23 +1,14 @@
-# fly.toml app configuration file generated for minefort-bot-n0mgea on 2026-08-27T22:06:58Z
-#
-# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
-#
+# fly.toml configuração para rodar 24/7 com SSHX e bom desempenho
 
 app = 'minefort-bot-n0mgea'
 primary_region = 'gru'
 
 [build]
 
-[http_service]
-  internal_port = 22
-  force_https = true
-  auto_stop_machines = 'stop'
-  auto_start_machines = true
-  min_machines_running = 0
-  processes = ['app']
+# Removido o bloco [http_service] — não é necessário para SSHX.
+# Isso impede que o Fly desligue a máquina por falta de tráfego HTTP.
 
 [[vm]]
-  memory = '1gb'
   cpu_kind = 'shared'
-  cpus = 4
-  memory_mb = 2048
+  cpus = 2          # 2 CPUs compartilhadas = boa performance sem custo elevado
+  memory = '2gb'    # 2 GB de RAM (limite permitido para shared)
